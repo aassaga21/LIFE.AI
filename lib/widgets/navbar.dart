@@ -68,9 +68,18 @@ class Navbar extends StatelessWidget {
             icon: const Icon(Icons.dark_mode_outlined,
                 color: AppColors.grayText, size: 20),
           ),
-          const SizedBox(width: 4),
+          if (isWide) ...[
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/login'),
+              child: const Text(
+                'Se connecter',
+                style: TextStyle(color: AppColors.grayText, fontSize: 14),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () => Navigator.pushNamed(context, '/register'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,

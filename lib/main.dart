@@ -6,10 +6,18 @@ import 'screens/about_screen.dart';
 import 'screens/blog_screen.dart';
 import 'screens/entreprises_screen.dart';
 import 'screens/pricing_screen.dart';
-import 'screens/feedback_screen.dart';
-import 'theme/app_colors.dart';
+import 'screens/feedback_screen.dart'; // Import des écrans
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'theme/app_colors.dart';// Import des écrans et du thème
+import 'package:firebase_core/firebase_core.dart'; // Firebase core package
+import 'firebase_options.dart'; // Firebase configuration
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const LifeAIApp());
 }
 
@@ -45,6 +53,10 @@ class LifeAIApp extends StatelessWidget {
             page = const PricingScreen();
           case '/feedback':
             page = const FeedbackScreen();
+          case '/login':
+            page = const LoginScreen();
+          case '/register':
+            page = const RegisterScreen();
           default:
             page = const HomeScreen();
         }

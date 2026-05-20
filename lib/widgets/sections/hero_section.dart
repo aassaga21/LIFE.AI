@@ -144,7 +144,7 @@ class _HeroText extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () => Navigator.pushNamed(context, '/register'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
