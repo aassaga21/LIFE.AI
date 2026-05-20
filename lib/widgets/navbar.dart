@@ -52,6 +52,8 @@ class Navbar extends StatelessWidget {
                 route: '/pricing', currentRoute: currentRoute),
             _NavLink('Entreprises',
                 route: '/entreprises', currentRoute: currentRoute),
+            _NavLink('Avis',
+                route: '/feedback', currentRoute: currentRoute),
             _NavLink('Blog', route: '/blog', currentRoute: currentRoute),
             _NavLink('À propos',
                 route: '/about', currentRoute: currentRoute),

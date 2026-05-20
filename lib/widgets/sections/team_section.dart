@@ -66,24 +66,15 @@ class TeamSection extends StatelessWidget {
                   .toList(),
             )
           else if (isMedium)
-            Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: _MemberCard(_members[0])),
-                    const SizedBox(width: 16),
-                    Expanded(child: _MemberCard(_members[1])),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: _MemberCard(_members[2])),
-                    const SizedBox(width: 16),
-                    Expanded(child: _MemberCard(_members[3])),
-                  ],
-                ),
-              ],
+            Row(
+              children: _members
+                  .map((m) => Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: _MemberCard(m),
+                        ),
+                      ))
+                  .toList(),
             )
           else
             Column(
