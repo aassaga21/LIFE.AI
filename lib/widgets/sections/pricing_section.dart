@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/app_colors.dart';
+import '../../services/stripe_service.dart';
 
 class PricingSection extends StatelessWidget {
   const PricingSection({super.key});
@@ -33,7 +35,7 @@ class PricingSection extends StatelessWidget {
           ),
           const SizedBox(height: 48),
           isWide
-              ? const Row(
+              ? Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
@@ -48,9 +50,10 @@ class PricingSection extends StatelessWidget {
                         ],
                         buttonText: 'Commencer Gratuitement',
                         isHighlighted: false,
+                        onPressed: () {},
                       ),
                     ),
-                    SizedBox(width: 24),
+                    const SizedBox(width: 24),
                     Expanded(
                       child: _PricingCard(
                         plan: 'Premium',
@@ -65,9 +68,21 @@ class PricingSection extends StatelessWidget {
                         buttonText: 'Commencer l\'essai gratuit',
                         isHighlighted: true,
                         badge: 'Le plus populaire',
+                        onPressed: () async {
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user != null) {
+                            await StripeService.startCheckout(user.email!);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Connectez-vous pour souscrire au plan Premium'),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ),
-                    SizedBox(width: 24),
+                    const SizedBox(width: 24),
                     Expanded(
                       child: _PricingCard(
                         plan: 'Entreprise',
@@ -80,11 +95,12 @@ class PricingSection extends StatelessWidget {
                         ],
                         buttonText: 'Nous contacter',
                         isHighlighted: false,
+                        onPressed: () {},
                       ),
                     ),
                   ],
                 )
-              : const Column(
+              : Column(
                   children: [
                     _PricingCard(
                       plan: 'Gratuit',
@@ -97,8 +113,9 @@ class PricingSection extends StatelessWidget {
                       ],
                       buttonText: 'Commencer Gratuitement',
                       isHighlighted: false,
+                      onPressed: () {},
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     _PricingCard(
                       plan: 'Premium',
                       price: '9,99€',
@@ -112,8 +129,20 @@ class PricingSection extends StatelessWidget {
                       buttonText: 'Commencer l\'essai gratuit',
                       isHighlighted: true,
                       badge: 'Le plus populaire',
+                      onPressed: () async {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user != null) {
+                          await StripeService.startCheckout(user.email!);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Connectez-vous pour souscrire au plan Premium'),
+                            ),
+                          );
+                        }
+                      },
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     _PricingCard(
                       plan: 'Entreprise',
                       price: 'Sur mesure',
@@ -125,6 +154,7 @@ class PricingSection extends StatelessWidget {
                       ],
                       buttonText: 'Nous contacter',
                       isHighlighted: false,
+                      onPressed: () {},
                     ),
                   ],
                 ),
@@ -142,6 +172,7 @@ class _PricingCard extends StatelessWidget {
   final String buttonText;
   final bool isHighlighted;
   final String? badge;
+  final VoidCallback onPressed;
 
   const _PricingCard({
     required this.plan,
@@ -150,6 +181,7 @@ class _PricingCard extends StatelessWidget {
     required this.features,
     required this.buttonText,
     required this.isHighlighted,
+    required this.onPressed,
     this.badge,
   });
 
@@ -231,7 +263,7 @@ class _PricingCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: onPressed,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: isHighlighted
                         ? AppColors.primary
@@ -239,7 +271,9 @@ class _PricingCard extends StatelessWidget {
                     backgroundColor:
                         isHighlighted ? Colors.white : Colors.transparent,
                     side: BorderSide(
-                      color: isHighlighted ? Colors.transparent : AppColors.border,
+                      color: isHighlighted
+                          ? Colors.transparent
+                          : AppColors.border,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

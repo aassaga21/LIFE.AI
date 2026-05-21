@@ -10,6 +10,7 @@ import '../services/ai/alert_engine.dart';
 import '../services/ai/recommendation_engine.dart';
 import '../features/dashboard/widgets/fatigue_chart.dart';
 import '../theme/app_colors.dart';
+import '../widgets/navbar.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,12 +23,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
   final _firestoreService = FirestoreService();
 
-  // Animation bannière d'alerte
   late AnimationController _alertController;
   late Animation<Offset> _alertAnimation;
   String? _lastAlert;
 
-  // Données AI (calculées de façon asynchrone quand les streams émettent)
   List<AlertRule> _cachedAlerts = [];
   List<Recommendation> _cachedRecs = [];
   String _lastDataKey = '';
@@ -52,9 +51,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.dispose();
   }
 
-  // ── IA ────────────────────────────────────────────────────────────────────
-
-  /// Recalcule alertes + recommandations quand les données changent
   void _maybeUpdateAi(UserHealthProfile? profile, List<CheckIn> checkins) {
     if (profile == null) return;
     final key =
@@ -62,10 +58,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     if (key == _lastDataKey) return;
     _lastDataKey = key;
 
-    // Alertes — calcul synchrone
     final alerts = AlertEngine().analyzeCheckins(checkins, profile);
 
-    // Recommandations — asynchrone, on met à jour l'état quand c'est prêt
     RecommendationEngine()
         .getRecommendations(
           profile: profile,
@@ -96,8 +90,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────
-
   String _greeting(String firstName) {
     final h = DateTime.now().hour;
     if (h >= 6 && h < 12) return 'Bonjour $firstName ☀️';
@@ -111,13 +103,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     if (score > 50) return AppColors.orange;
     return AppColors.red;
   }
-
-  Future<void> _logout() async {
-    context.read<UserProvider>().clear();
-    Navigator.of(context).pushReplacementNamed('/login');
-  }
-
-  // ── BUILD ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +135,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ? checkins.first.scoreBienEtre
                   : (profile?.globalScore.toDouble() ?? 50.0);
 
-              // Déclenche le calcul IA en post-frame pour ne pas bloquer le build
               WidgetsBinding.instance.addPostFrameCallback(
                   (_) => _maybeUpdateAi(profile, checkins));
 
@@ -168,115 +152,104 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ── LAYOUTS ───────────────────────────────────────────────────────────────
-
-  Widget _buildMobileLayout(
+  Widget _buildWideLayout(
     UserHealthProfile? profile,
     List<CheckIn> checkins,
     double score,
   ) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          backgroundColor: AppColors.background,
-          elevation: 0,
-          floating: true,
-          automaticallyImplyLeading: false,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, color: AppColors.grayText),
-              onPressed: _logout,
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              _buildHeader(profile),
-              const SizedBox(height: 20),
-              if (_cachedAlerts.isNotEmpty) ...[
-                _buildAlertBanner(_cachedAlerts.first),
-                const SizedBox(height: 16),
+    return Column(
+      children: [
+        const Navbar(currentRoute: '/dashboard'),
+        const Divider(height: 1, color: AppColors.border),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(40, 32, 40, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(profile),
+                const SizedBox(height: 24),
+                if (_cachedAlerts.isNotEmpty) ...[
+                  _buildAlertBanner(_cachedAlerts.first),
+                  const SizedBox(height: 20),
+                ],
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          _buildScoreCircle(score),
+                          const SizedBox(height: 20),
+                          _buildMetricGrid(profile, checkins),
+                          const SizedBox(height: 20),
+                          FatigueChart(checkins: checkins),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildRecommendations(),
+                          const SizedBox(height: 12),
+                          _buildHistoryButton(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
-              _buildScoreCircle(score),
-              const SizedBox(height: 20),
-              _buildMetricGrid(profile, checkins),
-              const SizedBox(height: 20),
-              FatigueChart(checkins: checkins),
-              const SizedBox(height: 20),
-              _buildRecommendations(),
-              const SizedBox(height: 12),
-              _buildHistoryButton(),
-            ]),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildWideLayout(
+  Widget _buildMobileLayout(
     UserHealthProfile? profile,
     List<CheckIn> checkins,
     double score,
   ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(40, 32, 40, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(profile),
-              IconButton(
-                icon: const Icon(Icons.logout, color: AppColors.grayText),
-                onPressed: _logout,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          if (_cachedAlerts.isNotEmpty) ...[
-            _buildAlertBanner(_cachedAlerts.first),
-            const SizedBox(height: 20),
-          ],
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Column(
-                  children: [
+    return Column(
+      children: [
+        const Navbar(currentRoute: '/dashboard'),
+        const Divider(height: 1, color: AppColors.border),
+        Expanded(
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildHeader(profile),
+                    const SizedBox(height: 20),
+                    if (_cachedAlerts.isNotEmpty) ...[
+                      _buildAlertBanner(_cachedAlerts.first),
+                      const SizedBox(height: 16),
+                    ],
                     _buildScoreCircle(score),
                     const SizedBox(height: 20),
                     _buildMetricGrid(profile, checkins),
                     const SizedBox(height: 20),
                     FatigueChart(checkins: checkins),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    const SizedBox(height: 20),
                     _buildRecommendations(),
                     const SizedBox(height: 12),
                     _buildHistoryButton(),
-                  ],
+                  ]),
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
-
-  // ── WIDGETS ───────────────────────────────────────────────────────────────
 
   Widget _buildHeader(UserHealthProfile? profile) {
     return Column(
@@ -366,7 +339,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             child: Text(
               HealthCalculator.getStressLevel(score),
               style: TextStyle(
-                  color: color, fontWeight: FontWeight.w700, fontSize: 13),
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13),
             ),
           ),
         ],
@@ -392,8 +367,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       _MetricData(
         label: 'Stress',
         icon: Icons.psychology,
-        value:
-            last?.stress.toDouble() ?? profile?.stressLevel.toDouble() ?? 5,
+        value: last?.stress.toDouble() ??
+            profile?.stressLevel.toDouble() ?? 5,
         prevValue: prev?.stress.toDouble(),
         color: AppColors.rose,
         unit: '/10',
@@ -522,7 +497,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                   Navigator.of(context).pushNamed(alert.route),
               child: Text(alert.actionSuggested,
                   style: TextStyle(
-                      color: color, fontWeight: FontWeight.w700,
+                      color: color,
+                      fontWeight: FontWeight.w700,
                       fontSize: 12)),
             ),
           ],
@@ -532,9 +508,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildRecommendations() {
-    if (_cachedRecs.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (_cachedRecs.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -669,66 +643,62 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ── SKELETON ─────────────────────────────────────────────────────────────
-
   Widget _buildSkeleton() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 60),
-          const _SkeletonBox(width: 220, height: 32, radius: 8),
-          const SizedBox(height: 8),
-          const _SkeletonBox(width: 160, height: 18, radius: 6),
-          const SizedBox(height: 24),
-          const _SkeletonBox(
-              width: double.infinity, height: 200, radius: 20),
-          const SizedBox(height: 20),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.5,
-            children: const [
-              _SkeletonBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  radius: 16),
-              _SkeletonBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  radius: 16),
-              _SkeletonBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  radius: 16),
-              _SkeletonBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  radius: 16),
-            ],
+    return Column(
+      children: [
+        const Navbar(currentRoute: '/dashboard'),
+        const Divider(height: 1, color: AppColors.border),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                const _SkeletonBox(width: 220, height: 32, radius: 8),
+                const SizedBox(height: 8),
+                const _SkeletonBox(width: 160, height: 18, radius: 6),
+                const SizedBox(height: 24),
+                const _SkeletonBox(
+                    width: double.infinity, height: 200, radius: 20),
+                const SizedBox(height: 20),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.5,
+                  children: const [
+                    _SkeletonBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        radius: 16),
+                    _SkeletonBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        radius: 16),
+                    _SkeletonBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        radius: 16),
+                    _SkeletonBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        radius: 16),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const _SkeletonBox(
+                    width: double.infinity, height: 200, radius: 20),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          const _SkeletonBox(
-              width: double.infinity, height: 200, radius: 20),
-          const SizedBox(height: 20),
-          const _SkeletonBox(width: 200, height: 24, radius: 6),
-          const SizedBox(height: 12),
-          const _SkeletonBox(
-              width: double.infinity, height: 80, radius: 16),
-          const SizedBox(height: 12),
-          const _SkeletonBox(
-              width: double.infinity, height: 80, radius: 16),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
-
-// ── DATA CLASS ────────────────────────────────────────────────────────────────
 
 class _MetricData {
   final String label;
@@ -749,8 +719,6 @@ class _MetricData {
     this.invertTrend = false,
   });
 }
-
-// ── SKELETON WIDGET ───────────────────────────────────────────────────────────
 
 class _SkeletonBox extends StatefulWidget {
   final double width;

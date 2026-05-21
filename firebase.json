@@ -1,1 +1,39 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"life-ai-f464e","appId":"1:600699247290:android:3b4db8a4a26a0b9f7a8083","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"life-ai-f464e","configurations":{"android":"1:600699247290:android:3b4db8a4a26a0b9f7a8083","ios":"1:600699247290:ios:ea67ac9c599b9a557a8083","macos":"1:600699247290:ios:ea67ac9c599b9a557a8083","web":"1:600699247290:web:74fae4e6c6b87d497a8083","windows":"1:600699247290:web:fb416d0ec1cdd3a07a8083"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "life-ai-f464e",
+          "appId": "1:600699247290:android:3b4db8a4a26a0b9f7a8083",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "life-ai-f464e",
+          "configurations": {
+            "android": "1:600699247290:android:3b4db8a4a26a0b9f7a8083",
+            "ios": "1:600699247290:ios:ea67ac9c599b9a557a8083",
+            "macos": "1:600699247290:ios:ea67ac9c599b9a557a8083",
+            "web": "1:600699247290:web:74fae4e6c6b87d497a8083",
+            "windows": "1:600699247290:web:fb416d0ec1cdd3a07a8083"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
