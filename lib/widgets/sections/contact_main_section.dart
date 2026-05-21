@@ -71,7 +71,7 @@ class _ContactInfo extends StatelessWidget {
         const _ContactItem(
           icon: Icons.language,
           title: 'Site Web',
-          linkText: 'www.life-ai.app',
+          linkText: 'https://lifeai-app-82hxr.ondigitalocean.app/',
         ),
         const SizedBox(height: 20),
         const _ContactItem(

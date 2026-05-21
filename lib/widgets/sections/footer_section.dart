@@ -215,7 +215,7 @@ class _ContactColumn extends StatelessWidget {
         SizedBox(height: 12),
         _ContactItem(Icons.email_outlined, 'contact@life-ai.app'),
         SizedBox(height: 8),
-        _ContactItem(Icons.language, 'www.life-ai.app'),
+        _ContactItem(Icons.language, 'https://lifeai-app-82hxr.ondigitalocean.app/'),
       ],
     );
   }
