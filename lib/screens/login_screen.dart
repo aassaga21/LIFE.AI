@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 
@@ -41,7 +43,13 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+        final uid = _authService.currentUser?.uid;
+        if (uid != null) {
+          await context.read<UserProvider>().loadUserData(uid);
+        }
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
       }
     } catch (e) {
       setState(() {

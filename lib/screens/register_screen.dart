@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/user_health_profile.dart';
+import '../providers/user_provider.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -117,6 +121,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
+  // Normalise le niveau d'activité vers les valeurs du modèle
+  String _normaliserActivite(String? activite) {
+    switch (activite) {
+      case 'Sédentaire':
+        return 'sédentaire';
+      case 'Modéré':
+        return 'modéré';
+      case 'Actif':
+        return 'actif';
+      case 'Très actif':
+        return 'très actif';
+      default:
+        return 'modéré';
+    }
+  }
+
   // Création du compte à la dernière étape
   Future<void> _creerCompte() async {
     setState(() {
@@ -125,6 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      // Étape 1 : crée le compte Firebase Auth + document de base Firestore
       await _authService.signUp(
         email: _emailCtrl.text,
         password: _passwordCtrl.text,
@@ -132,8 +153,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
         lastName: _lastNameCtrl.text,
         profession: _professionCtrl.text,
       );
+
+      final uid = _authService.currentUser?.uid;
+      if (uid != null) {
+        // Étape 2 : sauvegarde le profil de santé complet (étapes 2 & 3)
+        final profile = UserHealthProfile(
+          uid: uid,
+          firstName: _firstNameCtrl.text.trim(),
+          lastName: _lastNameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          profession: _professionCtrl.text.trim(),
+          age: 0,
+          height: 170.0,
+          weight: 70.0,
+          gender: _genre ?? 'Autre',
+          sleepQuality: _sommeil.round(),
+          stressLevel: _stress.round(),
+          activityLevel: _normaliserActivite(_activite),
+          goals: _objectifsSelectionnes.toList(),
+          subscription: 'FREE',
+          createdAt: DateTime.now(),
+        );
+        await FirestoreService().saveUserProfile(profile);
+
+        // Étape 3 : charge les données dans le Provider
+        if (mounted) {
+          await context.read<UserProvider>().loadUserData(uid);
+        }
+      }
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.pushReplacementNamed(context, '/dashboard');
       }
     } catch (e) {
       setState(() {
