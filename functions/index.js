@@ -1,3 +1,4 @@
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
@@ -6,9 +7,9 @@ admin.initializeApp();
 const getStripe = () => require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // 1. Créer une session Stripe Checkout
-exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Utilisateur non connecté");
+exports.createCheckoutSession = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Utilisateur non connecté");
   }
 
   const stripe = getStripe();
@@ -25,16 +26,16 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       ],
       success_url: "https://life.ai/merci?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: "https://life.ai/tarification",
-      customer_email: context.auth.token.email,
+      customer_email: request.auth.token.email,
       metadata: {
-        firebaseUid: context.auth.uid,
+        firebaseUid: request.auth.uid,
       },
     });
 
     return { url: session.url };
   } catch (error) {
     console.error("Erreur création session:", error);
-    throw new functions.https.HttpsError("internal", "Impossible de créer la session de paiement");
+    throw new HttpsError("internal", "Impossible de créer la session de paiement");
   }
 });
 
@@ -141,7 +142,7 @@ async function handleSubscriptionChange(subscription) {
 
   await snapshot.docs[0].ref.update({
     subscription: isActive ? "PREMIUM" : "FREE",
-    subscriptionStatus: subscription.status, // "active", "canceled", "past_due"...
+    subscriptionStatus: subscription.status,
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
